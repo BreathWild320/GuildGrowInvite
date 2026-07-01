@@ -38,6 +38,7 @@ local function InitDB()
     if db.autoAcceptTrade == nil then db.autoAcceptTrade = true end
     if db.autoAcceptParty == nil then db.autoAcceptParty = false end
     if db.filterGuildedPlayers == nil then db.filterGuildedPlayers = true end
+    if db.debugLogging == nil then db.debugLogging = true end
     if db.inviteCooldown == nil then db.inviteCooldown = 30 end
     db.candidateList = db.candidateList or {}
     db.candidateSeen = db.candidateSeen or {}
@@ -214,10 +215,24 @@ local function ProcessInviteQueue(maxPerTick)
 end
 
 ------------------------------------------------------------
+-- Debug logging
+------------------------------------------------------------
+
+function GGI.DebugLog(fmt, ...)
+    local db = GGI.db
+    if db and db.debugLogging == false then return end
+    print(("|cff00ccff[GuildInvite]:|r " .. fmt):format(...))
+end
+
+------------------------------------------------------------
 -- Guild invite action
 ------------------------------------------------------------
 
-function GGI.InviteName(name, source, unit)
+-- Invites `name` to the guild.
+-- `skipGuildCheck` should be true only when the caller has already confirmed
+-- (via GGI.QueryGuildStatus) that this player isn't guilded - used for
+-- whisper-triggered invites, where no unit token exists to check directly.
+function GGI.InviteName(name, source, unit, skipGuildCheck)
     if not name or name == "" then return false, "no name" end
 
     if GGI.IsBlacklisted(name) then
@@ -236,17 +251,22 @@ function GGI.InviteName(name, source, unit)
         return false, "already in guild"
     end
 
-    if GGI.db and GGI.db.filterGuildedPlayers then
+    -- checkUnit is declared here (not inside the block below) so it's still
+    -- in scope further down when deciding whether to send the whisper.
+    local checkUnit = unit or GGI.FindUnitToken(name)
+
+    if not skipGuildCheck and GGI.db and GGI.db.filterGuildedPlayers then
         if GGI.IsGuilded(name) then
             SetCooldown(name, GGI.db.inviteCooldown or 30)
+            GGI.DebugLog("Skipped '%s', they're already in a guild.", name)
             return false, "in a guild (cached)"
         end
-        local checkUnit = unit or GGI.FindUnitToken(name)
         if checkUnit then
             local guildName = GetGuildInfo(checkUnit)
             if guildName then
                 GGI.MarkAsGuilded(name)
                 SetCooldown(name, GGI.db.inviteCooldown or 30)
+                GGI.DebugLog("Skipped '%s', they're already in a guild.", name)
                 return false, "in another guild"
             end
         else
@@ -265,7 +285,7 @@ function GGI.InviteName(name, source, unit)
     GuildInvite(name)
     GGI.AutoBlacklistName(name)
 
-    print(("|cff00ff00[GuildGrowInvite]|r Invited %s%s"):format(name, source and (" (" .. source .. ")") or ""))
+    GGI.DebugLog("Invited '%s' to the guild.%s", name, source and (" (" .. source .. ")") or "")
 
     local shouldWhisper = true
     if checkUnit and GetGuildInfo(checkUnit) then
@@ -996,6 +1016,7 @@ SlashCmdList["GUILDGROWINVITEHELP"] = function(msg)
     print("  /gugiscan on|off - toggle chat-scan candidate list")
     print("  /gugichat on|off - toggle auto-invite from chat matches")
     print("  /guginear on|off - toggle auto-invite nearby players")
+    print("  /gugidebug on|off - toggle [GuildInvite] invite/skip chat logging")
     print("  /gugiblacklist add|remove|list <name> - manage the blacklist")
 end
 
@@ -1053,6 +1074,17 @@ SlashCmdList["GUILDGROWINVITENEAR"] = function(msg)
         GGI.db.nearAutoInviteEnabled = false
     end
     print("|cff00ccff[GuildGrowInvite]|r Auto-invite nearby players: " .. (GGI.db.nearAutoInviteEnabled and "ON" or "OFF"))
+end
+
+SLASH_GUILDGROWINVITEDEBUG1 = "/gugidebug"
+SlashCmdList["GUILDGROWINVITEDEBUG"] = function(msg)
+    msg = msg and msg:lower():trim() or ""
+    if msg == "on" then
+        GGI.db.debugLogging = true
+    elseif msg == "off" then
+        GGI.db.debugLogging = false
+    end
+    print("|cff00ccff[GuildGrowInvite]|r Invite/skip debug logging: " .. (GGI.db.debugLogging and "ON" or "OFF"))
 end
 
 SLASH_GUILDGROWINVITEBLACKLIST1 = "/gugiblacklist"
