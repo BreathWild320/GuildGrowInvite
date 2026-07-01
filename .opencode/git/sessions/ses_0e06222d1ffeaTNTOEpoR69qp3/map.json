@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "sessionId": "ses_0e06222d1ffeaTNTOEpoR69qp3",
+  "repoId": "repo_da6a8c54-c165-458d-a5ed-24bee2d6c5dc",
+  "entries": [],
+  "tmpToCommit": {},
+  "tmpToBaseCommit": {},
+  "msgToCommit": {},
+  "msgToBaseCommit": {},
+  "continuation": {
+    "currentOwnerMsgId": "msg_f1fa4b97f001SZCqntptIvq50C",
+    "predecessorOwnerMsgId": null,
+    "continuationSequence": 1,
+    "lifecycleState": "watching",
+    "postFinalWatchEntries": []
+  }
+}

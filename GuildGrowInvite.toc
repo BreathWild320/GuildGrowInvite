@@ -1,0 +1,16 @@
+## Interface: 30300
+## Title: GuildGrowInvite
+## Notes: Whisper-keyword auto-invite + chat-scan assisted guild recruitment (manual confirm on scan hits)
+## Author: You
+## Version: 1.0
+## Dependencies: LibSharedMedia-3.0
+## SavedVariables: GuildGrowInviteDB
+
+GuildGrowInvite_Settings.lua
+GuildGrowInvite.lua
+GuildGrowInvite_Scanner.lua
+GuildGrowInvite_CandidatesList.lua
+GuildGrowInvite_Blacklist.lua
+GuildGrowInvite_Options.lua
+GuildGrowInvite_Minimap.lua
+GuildGrowInvite_UI.lua

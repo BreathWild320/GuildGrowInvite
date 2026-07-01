@@ -1,0 +1,9 @@
+﻿local matched = false
+    for _, keyword in ipairs(keywords) do
+        if msgLower:find(keyword:lower(), 1, true) then
+            matched = true
+            break
+        end
+    end
+
+
