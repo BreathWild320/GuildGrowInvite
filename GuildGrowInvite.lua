@@ -249,6 +249,9 @@ function GGI.InviteName(name, source, unit)
                 SetCooldown(name, GGI.db.inviteCooldown or 30)
                 return false, "in another guild"
             end
+        else
+            SetCooldown(name, GGI.db.inviteCooldown or 30)
+            return false, "cannot verify guild status"
         end
     end
 
@@ -687,6 +690,7 @@ local function OnWhisper(msg, sender)
 
     if not matched then return end
     if db.filterGuildedPlayers and GGI.IsGuilded(name) then return end
+    GGI.QueueWhoCheck(name)
     GGI.InviteName(name, "whisper keyword")
 end
 
@@ -696,7 +700,8 @@ function GGI.OnChatMatch(name, channel)
     if GGI.IsBlacklisted(name) then return end
     if not db.chatAutoInviteEnabled then return end
     if GGI.IsInMyGuild(name) then return end
-    if db.filterGuildedPlayers and GGI.IsGuilded(name) then return end
+    if db.filterGuildedPlayers and GGI.IsGuilded(name) then GGI.QueueWhoCheck(name); return end
+    GGI.QueueWhoCheck(name)
     GGI.InviteName(name, "chat scan: " .. channel)
 end
 
@@ -913,6 +918,7 @@ eventFrame:RegisterEvent("PARTY_INVITE_REQUEST")
 eventFrame:RegisterEvent("DUEL_REQUESTED")
 eventFrame:RegisterEvent("DUEL_FINISHED")
 eventFrame:RegisterEvent("TRADE_SHOW")
+eventFrame:RegisterEvent("WHO_UPDATE")
 
 eventFrame:SetScript("OnEvent", function(self, event, ...)
     if event == "ADDON_LOADED" then
@@ -962,6 +968,8 @@ eventFrame:SetScript("OnEvent", function(self, event, ...)
         OnDuelFinished()
     elseif event == "TRADE_SHOW" then
         OnTradeShow()
+    elseif event == "WHO_UPDATE" then
+        GGI.OnWhoUpdate()
     end
 end)
 
