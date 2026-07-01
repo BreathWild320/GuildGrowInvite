@@ -1,6 +1,5 @@
 local GGI = GuildGrowInvite
 
--- Load LibSharedMedia-3.0 if available (LoadOnDemand: 1)
 if not LibStub("LibSharedMedia-3.0", true) then
     LoadAddOn("LibSharedMedia-3.0")
 end
@@ -48,9 +47,6 @@ local function GetLSMStatusbar(name)
     return name
 end
 
-------------------------------------------------------------
--- Main UI
-------------------------------------------------------------
 local frame
 local mapButton
 
@@ -86,9 +82,31 @@ local function CreateMapButton()
     end)
 end
 
-------------------------------------------------------------
--- Build the frame
-------------------------------------------------------------
+local function CreateSectionHeader(parent, text, anchor, yOff, width)
+    local header = parent:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
+    header:SetFont(GetLSMFont(fontName), 12)
+    header:SetPoint("TOPLEFT", anchor or parent, "TOPLEFT", 24, yOff or -70)
+    header:SetText(text)
+    header:SetTextColor(0.55, 0.65, 1, 1)
+
+    local divider = parent:CreateTexture(nil, "ARTWORK")
+    divider:SetTexture(GetLSMStatusbar(statusbarName) or "Interface\\Tooltips\\UI-Tooltip-Border")
+    divider:SetSize(width or 460, 2)
+    divider:SetPoint("TOPLEFT", header, "BOTTOMLEFT", 0, -6)
+    divider:SetVertexColor(0.35, 0.35, 0.65, 0.7)
+
+    return header, divider
+end
+
+local function CreateSectionPanel(parent, anchor, yOff, width, height)
+    local panel = parent:CreateTexture(nil, "ARTWORK")
+    panel:SetTexture(GetLSMStatusbar(statusbarName) or "Interface\\Tooltips\\UI-Tooltip-Background")
+    panel:SetSize(width or 472, height or 90)
+    panel:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", 0, yOff or -4)
+    panel:SetVertexColor(0.08, 0.08, 0.16, 0.65)
+    return panel
+end
+
 local function BuildFrame()
     if frame then return frame end
 
@@ -108,26 +126,32 @@ local function BuildFrame()
         tile = true, tileSize = 32, edgeSize = 16,
         insets = { left = 5, right = 5, top = 5, bottom = 5 }
     })
-    frame:SetBackdropColor(0.06, 0.06, 0.1, 0.95)
-    frame:SetBackdropBorderColor(0.3, 0.3, 0.5, 0.8)
+    frame:SetBackdropColor(0.04, 0.04, 0.08, 0.96)
+    frame:SetBackdropBorderColor(0.35, 0.35, 0.65, 0.85)
 
-    frame.titleBg = frame:CreateTexture(nil, "ARTWORK")
-    frame.titleBg:SetTexture(GetLSMStatusbar(statusbarName) or "Interface\\DialogFrame\\UI-DialogBox-Header")
-    frame.titleBg:SetSize(400, 40)
-    frame.titleBg:SetPoint("TOP", frame, "TOP", 0, -8)
-    frame.titleBg:SetVertexColor(0.3, 0.3, 0.6, 0.8)
+    local titleBar = frame:CreateTexture(nil, "ARTWORK")
+    titleBar:SetTexture(GetLSMStatusbar(statusbarName) or "Interface\\DialogFrame\\UI-DialogBox-Header")
+    titleBar:SetSize(490, 52)
+    titleBar:SetPoint("TOP", frame, "TOP", 0, -6)
+    titleBar:SetVertexColor(0.28, 0.28, 0.58, 0.9)
+
+    local titleGlow = frame:CreateTexture(nil, "OVERLAY")
+    titleGlow:SetTexture(GetLSMStatusbar(statusbarName) or "Interface\\DialogFrame\\UI-DialogBox-Header")
+    titleGlow:SetSize(490, 8)
+    titleGlow:SetPoint("TOP", titleBar, "BOTTOM", 0, 0)
+    titleGlow:SetVertexColor(0.4, 0.4, 0.8, 0.5)
 
     frame.title = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    frame.title:SetFont(GetLSMFont(fontName), 16)
-    frame.title:SetPoint("TOP", frame.titleBg, "TOP", 0, -10)
+    frame.title:SetFont(GetLSMFont(fontName), 18)
+    frame.title:SetPoint("TOP", titleBar, "TOP", 0, -12)
     frame.title:SetText("GuildGrowInvite")
-    frame.title:SetTextColor(0.8, 0.8, 1, 1)
+    frame.title:SetTextColor(0.85, 0.85, 1, 1)
 
     local subtitle = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     subtitle:SetFont(GetLSMFont(fontName), 11)
     subtitle:SetPoint("TOP", frame.title, "BOTTOM", 0, -2)
     subtitle:SetText("Auto-Recruitment Manager")
-    subtitle:SetTextColor(0.5, 0.5, 0.7, 1)
+    subtitle:SetTextColor(0.5, 0.55, 0.75, 1)
 
     frame.closeBtn = CreateFrame("Button", nil, frame, "UIPanelCloseButton")
     frame.closeBtn:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -5, -5)
@@ -135,20 +159,7 @@ local function BuildFrame()
 
     local db = GGI.db
 
-    ------------------------------------------------------------
-    -- Settings section
-    ------------------------------------------------------------
-    local settingsLabel = frame:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
-    settingsLabel:SetFont(GetLSMFont(fontName), 12)
-    settingsLabel:SetPoint("TOPLEFT", frame, "TOPLEFT", 24, -70)
-    settingsLabel:SetText("SETTINGS")
-    settingsLabel:SetTextColor(0.6, 0.6, 0.9, 1)
-
-    local divider1 = frame:CreateTexture(nil, "ARTWORK")
-    divider1:SetTexture(GetLSMStatusbar(statusbarName) or "Interface\\Tooltips\\UI-Tooltip-Border")
-    divider1:SetSize(460, 2)
-    divider1:SetPoint("TOPLEFT", settingsLabel, "BOTTOMLEFT", 0, -6)
-    divider1:SetVertexColor(0.3, 0.3, 0.5, 0.6)
+    CreateSectionHeader(frame, "RECRUITMENT SETTINGS", frame, -70)
 
     local function CreateStyledCheckbox(text, key, defaultVal, anchor, anchorPoint, xOff, yOff)
         local cb = CreateFrame("CheckButton", nil, frame, "UICheckButtonTemplate")
@@ -161,7 +172,7 @@ local function BuildFrame()
         label:SetPoint("LEFT", cb, "RIGHT", 8, 1)
         label:SetFont(GetLSMFont(fontName), 12)
         label:SetText(text)
-        label:SetTextColor(0.85, 0.85, 0.9, 1)
+        label:SetTextColor(0.85, 0.85, 0.92, 1)
         return cb
     end
 
@@ -171,14 +182,15 @@ local function BuildFrame()
     local lfgAutoInviteCheck = CreateStyledCheckbox("Auto-invite LFG whispers/chat (aggressive)", "lfgAutoInviteEnabled", true, nearAutoInviteCheck, "TOPLEFT", 0, -24)
     local snoopCheck = CreateStyledCheckbox("Snoop nearby players (aggressive scanning)", "snoopEnabled", true, lfgAutoInviteCheck, "TOPLEFT", 0, -24)
 
-    -- Level filter section
     local levelFilterCheck = CreateStyledCheckbox("Enable level range filter", "levelFilterEnabled", false, snoopCheck, "TOPLEFT", 0, -28)
+
+    local filterPanel = CreateSectionPanel(frame, levelFilterCheck, -4, 350, 30)
 
     local minLevelLabel = frame:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
     minLevelLabel:SetFont(GetLSMFont(fontName), 11)
     minLevelLabel:SetPoint("TOPLEFT", levelFilterCheck, "BOTTOMLEFT", 20, -10)
     minLevelLabel:SetText("Min level:")
-    minLevelLabel:SetTextColor(0.7, 0.7, 0.8, 1)
+    minLevelLabel:SetTextColor(0.65, 0.65, 0.8, 1)
 
     local minLevelBox = CreateFrame("EditBox", nil, frame)
     minLevelBox:SetAutoFocus(false)
@@ -190,7 +202,8 @@ local function BuildFrame()
         tile = true, tileSize = 16, edgeSize = 12,
         insets = { left = 3, right = 3, top = 3, bottom = 3 }
     })
-    minLevelBox:SetBackdropColor(0.08, 0.08, 0.12, 0.8)
+    minLevelBox:SetBackdropColor(0.06, 0.06, 0.1, 0.85)
+    minLevelBox:SetBackdropBorderColor(0.2, 0.2, 0.35, 0.7)
     minLevelBox:SetTextInsets(6, 0, 0, 0)
     minLevelBox:SetFont(GetLSMFont(fontName), 11)
     minLevelBox:SetTextColor(1, 1, 1, 1)
@@ -211,7 +224,7 @@ local function BuildFrame()
     maxLevelLabel:SetFont(GetLSMFont(fontName), 11)
     maxLevelLabel:SetPoint("LEFT", minLevelBox, "RIGHT", 20, 0)
     maxLevelLabel:SetText("Max level:")
-    maxLevelLabel:SetTextColor(0.7, 0.7, 0.8, 1)
+    maxLevelLabel:SetTextColor(0.65, 0.65, 0.8, 1)
 
     local maxLevelBox = CreateFrame("EditBox", nil, frame)
     maxLevelBox:SetAutoFocus(false)
@@ -223,7 +236,8 @@ local function BuildFrame()
         tile = true, tileSize = 16, edgeSize = 12,
         insets = { left = 3, right = 3, top = 3, bottom = 3 }
     })
-    maxLevelBox:SetBackdropColor(0.08, 0.08, 0.12, 0.8)
+    maxLevelBox:SetBackdropColor(0.06, 0.06, 0.1, 0.85)
+    maxLevelBox:SetBackdropBorderColor(0.2, 0.2, 0.35, 0.7)
     maxLevelBox:SetTextInsets(6, 0, 0, 0)
     maxLevelBox:SetFont(GetLSMFont(fontName), 11)
     maxLevelBox:SetTextColor(1, 1, 1, 1)
@@ -240,24 +254,21 @@ local function BuildFrame()
         self:ClearFocus()
     end)
 
-    -- Guild filter checkbox
     local guildFilterCheck = CreateStyledCheckbox("Skip players already in a guild", "filterGuildedPlayers", true, maxLevelBox, "TOPLEFT", -200, -16)
 
-    -- Tooltip for guild filter
     guildFilterCheck:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
         GameTooltip:SetText("Skip Guilded Players", 1, 1, 1)
         GameTooltip:AddLine("When enabled, the addon will skip players", 0.8, 0.8, 0.8)
         GameTooltip:AddLine("who are already a member of any guild.", 0.8, 0.8, 0.8)
-        GameTooltip:AddLine("This prevents attempting to recruit", 0.6, 0.6, 0.8)
-        GameTooltip:AddLine("players already in a guild.", 0.6, 0.6, 0.8)
+        GameTooltip:AddLine("Uses a cache to remember guilded players", 0.6, 0.6, 0.8)
+        GameTooltip:AddLine("even after they leave your range.", 0.6, 0.6, 0.8)
         GameTooltip:Show()
     end)
     guildFilterCheck:SetScript("OnLeave", function()
         GameTooltip:Hide()
     end)
 
-    -- Add tooltips to all setting checkboxes
     local checkboxTooltips = {
         [scanCheck] = {"Chat-Scan Candidate List", "Build a candidate list from public chat messages.", "When enabled, every player who speaks in a", "tracked channel gets added to the candidate list", "for you to manually review and invite."},
         [chatAutoInviteCheck] = {"Auto-Invite from Chat", "Automatically invite players who speak in public channels.", "Works for every message in tracked channels.", "Use with caution as this is very aggressive."},
@@ -281,76 +292,30 @@ local function BuildFrame()
         end)
     end
 
-    ------------------------------------------------------------
-    -- Quick Actions
-    ------------------------------------------------------------
-    -- Section panel background
-    local actionPanel = frame:CreateTexture(nil, "ARTWORK")
-    actionPanel:SetTexture(GetLSMStatusbar(statusbarName) or "Interface\\Tooltips\\UI-Tooltip-Background")
-    actionPanel:SetSize(472, 90)
-    actionPanel:SetPoint("TOPLEFT", guildFilterCheck, "BOTTOMLEFT", -24, -8)
-    actionPanel:SetVertexColor(0.1, 0.1, 0.18, 0.6)
-
-    local actionLabel = frame:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
-    actionLabel:SetFont(GetLSMFont(fontName), 12)
-    actionLabel:SetPoint("TOPLEFT", actionPanel, "TOPLEFT", 20, -10)
-    actionLabel:SetText("QUICK ACTIONS")
-    actionLabel:SetTextColor(0.6, 0.8, 1, 1)
-
-    local divider2 = frame:CreateTexture(nil, "ARTWORK")
-    divider2:SetTexture(GetLSMStatusbar(statusbarName) or "Interface\\Tooltips\\UI-Tooltip-Border")
-    divider2:SetSize(440, 2)
-    divider2:SetPoint("TOPLEFT", actionLabel, "BOTTOMLEFT", 0, -6)
-    divider2:SetVertexColor(0.3, 0.3, 0.6, 0.7)
+    local _, qaDivider = CreateSectionHeader(frame, "QUICK ACTIONS", guildFilterCheck, -96)
 
     local function CreateStyledButton(text, anchor, yOff)
         local btn = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
-        btn:SetSize(200, 26)
+        btn:SetSize(210, 28)
         btn:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", 18, yOff)
         btn:SetText(text)
-        local btnText = _G[btn:GetName() .. "Text"]
-        if btnText then
-            btnText:SetFont(GetLSMFont(fontName), 11)
-        end
         return btn
     end
 
-    local blacklistBtn = CreateStyledButton("Blacklist Manager", divider2, -6)
+    local blacklistBtn = CreateStyledButton("Blacklist Manager", qaDivider, -8)
     blacklistBtn:SetScript("OnClick", function()
         GGI.ToggleBlacklistWindow()
     end)
 
-    local messageBtn = CreateStyledButton("Message Manager", blacklistBtn, -6)
+    local messageBtn = CreateStyledButton("Message Manager", blacklistBtn, -4)
     messageBtn:SetScript("OnClick", function()
         GGI.ToggleMessagesWindow()
     end)
-
-    -- Stats display
-    local statsPanel = frame:CreateTexture(nil, "ARTWORK")
-    statsPanel:SetTexture(GetLSMStatusbar(statusbarName) or "Interface\\Tooltips\\UI-Tooltip-Background")
-    statsPanel:SetSize(472, 55)
-    statsPanel:SetPoint("TOPLEFT", actionPanel, "BOTTOMLEFT", 0, -4)
-    statsPanel:SetVertexColor(0.08, 0.08, 0.15, 0.5)
-
-    local statsLabel = frame:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
-    statsLabel:SetFont(GetLSMFont(fontName), 12)
-    statsLabel:SetPoint("TOPLEFT", statsPanel, "TOPLEFT", 20, -10)
-    statsLabel:SetText("STATS")
-    statsLabel:SetTextColor(0.6, 0.8, 1, 1)
-
-    local statsText = frame:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
-    statsText:SetFont(GetLSMFont(fontName), 11)
-    statsText:SetPoint("TOPLEFT", statsLabel, "BOTTOMLEFT", 0, -8)
-    statsText:SetText("Total messages available: " .. #GGI.GetAllMessages())
-    statsText:SetTextColor(0.6, 0.6, 0.7, 1)
 
     frame:Hide()
     return frame
 end
 
-------------------------------------------------------------
--- Message Manager Window
-------------------------------------------------------------
 local messageWindow = nil
 local messageButtons = {}
 
@@ -374,7 +339,7 @@ function GGI.CreateMessagesWindow()
     if messageWindow then return end
 
     local frame = CreateFrame("Frame", "GuildGrowInviteMessagesFrame", UIParent)
-    frame:SetSize(500, 400)
+    frame:SetSize(520, 420)
     frame:SetPoint("CENTER", UIParent, "CENTER")
     frame:SetFrameStrata("DIALOG")
     frame:SetBackdrop({
@@ -383,8 +348,8 @@ function GGI.CreateMessagesWindow()
         tile = true, tileSize = 32, edgeSize = 16,
         insets = { left = 5, right = 5, top = 5, bottom = 5 }
     })
-    frame:SetBackdropColor(0.06, 0.06, 0.1, 0.95)
-    frame:SetBackdropBorderColor(0.3, 0.3, 0.5, 0.8)
+    frame:SetBackdropColor(0.04, 0.04, 0.08, 0.96)
+    frame:SetBackdropBorderColor(0.35, 0.35, 0.65, 0.85)
     frame:EnableMouse(true)
     frame:SetMovable(true)
     frame:RegisterForDrag("LeftButton")
@@ -393,32 +358,30 @@ function GGI.CreateMessagesWindow()
     frame:Hide()
     messageWindow = frame
 
-    -- Title bg bar
-    local titleBg = frame:CreateTexture(nil, "ARTWORK")
-    titleBg:SetTexture(GetLSMStatusbar(statusbarName) or "Interface\\DialogFrame\\UI-DialogBox-Header")
-    titleBg:SetSize(380, 30)
-    titleBg:SetPoint("TOP", frame, "TOP", 0, -6)
-    titleBg:SetVertexColor(0.3, 0.3, 0.6, 0.8)
+    local titleBar = frame:CreateTexture(nil, "ARTWORK")
+    titleBar:SetTexture(GetLSMStatusbar(statusbarName) or "Interface\\DialogFrame\\UI-DialogBox-Header")
+    titleBar:SetSize(490, 36)
+    titleBar:SetPoint("TOP", frame, "TOP", 0, -6)
+    titleBar:SetVertexColor(0.28, 0.28, 0.58, 0.9)
 
     local title = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    title:SetFont(GetLSMFont(fontName), 14)
-    title:SetPoint("TOP", titleBg, "TOP", 0, -7)
+    title:SetFont(GetLSMFont(fontName), 15)
+    title:SetPoint("TOP", titleBar, "TOP", 0, -9)
     title:SetText("Message Manager")
-    title:SetTextColor(0.8, 0.8, 1, 1)
+    title:SetTextColor(0.85, 0.85, 1, 1)
 
     local closeBtn = CreateFrame("Button", nil, frame, "UIPanelCloseButton")
     closeBtn:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -4, -4)
 
-    -- Add new message
     local addLabel = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     addLabel:SetFont(GetLSMFont(fontName), 11)
-    addLabel:SetPoint("TOPLEFT", frame, "TOPLEFT", 15, -42)
+    addLabel:SetPoint("TOPLEFT", frame, "TOPLEFT", 15, -48)
     addLabel:SetText("Add new message:")
-    addLabel:SetTextColor(0.7, 0.7, 0.8, 1)
+    addLabel:SetTextColor(0.65, 0.65, 0.8, 1)
 
     local addBox = CreateFrame("EditBox", nil, frame)
     addBox:SetAutoFocus(false)
-    addBox:SetSize(365, 26)
+    addBox:SetSize(385, 26)
     addBox:SetPoint("TOPLEFT", addLabel, "BOTTOMLEFT", 0, -6)
     addBox:SetBackdrop({
         bgFile = GetLSMBG(bgName),
@@ -426,7 +389,8 @@ function GGI.CreateMessagesWindow()
         tile = true, tileSize = 16, edgeSize = 12,
         insets = { left = 3, right = 3, top = 3, bottom = 3 }
     })
-    addBox:SetBackdropColor(0.08, 0.08, 0.12, 0.8)
+    addBox:SetBackdropColor(0.06, 0.06, 0.1, 0.85)
+    addBox:SetBackdropBorderColor(0.2, 0.2, 0.35, 0.7)
     addBox:SetTextInsets(6, 0, 0, 0)
     addBox:SetFont(GetLSMFont(fontName), 11)
     addBox:SetTextColor(1, 1, 1, 1)
@@ -436,6 +400,16 @@ function GGI.CreateMessagesWindow()
     addBtn:SetSize(80, 26)
     addBtn:SetPoint("LEFT", addBox, "RIGHT", 10, 0)
     addBtn:SetText("Add")
+    local addBtnText = addBtn.GetFontString and addBtn:GetFontString()
+    if not addBtnText and addBtn.GetRegions then
+        for _, r in ipairs({addBtn:GetRegions()}) do
+            if r and r.GetObjectType and r:GetObjectType() == "FontString" then
+                addBtnText = r
+                break
+            end
+        end
+    end
+    if addBtnText then addBtnText:SetFont(GetLSMFont(fontName), 11) end
     addBtn:SetScript("OnClick", function()
         local text = addBox:GetText()
         if text and text ~= "" then
@@ -445,29 +419,26 @@ function GGI.CreateMessagesWindow()
         end
     end)
 
-    -- Messages list label
     local listLabel = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     listLabel:SetFont(GetLSMFont(fontName), 11)
     listLabel:SetPoint("TOPLEFT", addBox, "BOTTOMLEFT", 0, -15)
     listLabel:SetText("Messages:")
-    listLabel:SetTextColor(0.7, 0.7, 0.8, 1)
+    listLabel:SetTextColor(0.65, 0.65, 0.8, 1)
 
-    -- Scroll frame
     local scrollFrame = CreateFrame("ScrollFrame", nil, frame, "UIPanelScrollFrameTemplate")
-    scrollFrame:SetSize(470, 180)
+    scrollFrame:SetSize(490, 180)
     scrollFrame:SetPoint("TOPLEFT", listLabel, "BOTTOMLEFT", 0, -6)
 
     local scrollContent = CreateFrame("Frame", nil, scrollFrame)
-    scrollContent:SetSize(470, 180)
+    scrollContent:SetSize(490, 180)
     scrollContent:SetBackdrop({
         bgFile = GetLSMBG(bgName),
         tile = true, tileSize = 16,
         insets = { left = 0, right = 0, top = 0, bottom = 0 }
     })
-    scrollContent:SetBackdropColor(0.02, 0.02, 0.06, 0.4)
+    scrollContent:SetBackdropColor(0.02, 0.02, 0.05, 0.4)
     scrollFrame:SetScrollChild(scrollContent)
 
-    -- Randomize checkbox
     local randomizeCheck = CreateFrame("CheckButton", nil, frame, "UICheckButtonTemplate")
     randomizeCheck:SetPoint("TOPLEFT", scrollFrame, "BOTTOMLEFT", 0, -15)
     randomizeCheck:SetScript("OnEnter", function(self)
@@ -487,24 +458,22 @@ function GGI.CreateMessagesWindow()
     randomizeText:SetFont(GetLSMFont(fontName), 11)
     randomizeText:SetPoint("LEFT", randomizeCheck, "RIGHT", 5, 0)
     randomizeText:SetText("Randomize messages")
-    randomizeText:SetTextColor(0.85, 0.85, 0.9, 1)
+    randomizeText:SetTextColor(0.85, 0.85, 0.92, 1)
 
-    -- Selected message display
     local selectedLabel = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     selectedLabel:SetFont(GetLSMFont(fontName), 11)
     selectedLabel:SetPoint("TOPLEFT", randomizeCheck, "BOTTOMLEFT", 0, -15)
     selectedLabel:SetText("Currently selected:")
-    selectedLabel:SetTextColor(0.7, 0.7, 0.8, 1)
+    selectedLabel:SetTextColor(0.65, 0.65, 0.8, 1)
 
     local selectedText = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     selectedText:SetFont(GetLSMFont(fontName), 10)
     selectedText:SetPoint("TOPLEFT", selectedLabel, "BOTTOMLEFT", 0, -5)
-    selectedText:SetSize(460, 40)
+    selectedText:SetSize(470, 40)
     selectedText:SetWordWrap(true)
     selectedText:SetText("Loading...")
-    selectedText:SetTextColor(0.6, 0.6, 0.7, 1)
+    selectedText:SetTextColor(0.6, 0.6, 0.75, 1)
 
-    -- Store references
     frame.scrollContent = scrollContent
     frame.selectedText = selectedText
     frame.randomizeCheck = randomizeCheck
@@ -538,8 +507,21 @@ function GGI.RefreshMessagesList()
         local prefix = isDefault and "[D] " or "[C] "
 
         local btn = CreateFrame("Button", nil, scrollContent)
-        btn:SetSize(445, 22)
+        btn:SetSize(465, 22)
         btn:SetPoint("TOPLEFT", scrollContent, "TOPLEFT", 10, -yOffset)
+
+        btn:SetScript("OnEnter", function(self)
+            self:SetBackdropColor(0.12, 0.12, 0.22, 0.5)
+        end)
+        btn:SetScript("OnLeave", function(self)
+            self:SetBackdropColor(0, 0, 0, 0)
+        end)
+        btn:SetBackdrop({
+            bgFile = GetLSMBG(bgName),
+            tile = true, tileSize = 16,
+            insets = { left = 0, right = 0, top = 0, bottom = 0 }
+        })
+        btn:SetBackdropColor(0, 0, 0, 0)
 
         local text = btn:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
         text:SetFont(GetLSMFont(fontName), 10)
@@ -580,9 +562,6 @@ function GGI.RefreshMessagesList()
     scrollContent:SetHeight(yOffset)
 end
 
-------------------------------------------------------------
--- Public toggle
-------------------------------------------------------------
 function GGI.ToggleUI()
     local f = BuildFrame()
     if f:IsShown() then
@@ -592,9 +571,6 @@ function GGI.ToggleUI()
     end
 end
 
-------------------------------------------------------------
--- Map button initialization
-------------------------------------------------------------
 local mapButtonEvent = CreateFrame("Frame")
 mapButtonEvent:RegisterEvent("ADDON_LOADED")
 mapButtonEvent:SetScript("OnEvent", function(self, event)

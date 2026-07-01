@@ -53,3 +53,37 @@ function GGI.ListBlacklist()
     table.sort(list)
     return list
 end
+
+------------------------------------------------------------
+-- Guilded player cache
+------------------------------------------------------------
+GGI.guildedCache = {}
+
+function GGI.MarkAsGuilded(name)
+    if not name then return end
+    local stripped = GGI.StripRealm(name)
+    GGI.guildedCache[stripped] = true
+end
+
+function GGI.IsGuilded(name)
+    if not name then return false end
+    local stripped = GGI.StripRealm(name)
+    if GGI.guildedCache[stripped] then return true end
+    if GGI.IsInMyGuild(stripped) then
+        GGI.guildedCache[stripped] = true
+        return true
+    end
+    local unit = GGI.FindUnitToken(stripped)
+    if unit then
+        local guildName = GetGuildInfo(unit)
+        if guildName then
+            GGI.guildedCache[stripped] = true
+            return true
+        end
+    end
+    return false
+end
+
+function GGI.ClearGuildedCache()
+    GGI.guildedCache = {}
+end

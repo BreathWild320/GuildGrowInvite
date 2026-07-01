@@ -28,6 +28,7 @@ local function CreateOptionsPanel()
         CreateCheckbox("Chat Auto-Invite", "chatAutoInviteEnabled", true)
         CreateCheckbox("Nearby Auto-Invite", "nearAutoInviteEnabled", true)
         CreateCheckbox("Build Candidate List", "scanEnabled", true)
+        CreateCheckbox("Skip Players Already in a Guild", "filterGuildedPlayers", true)
 
         y = y - 10
         CreateCheckbox("Auto-Accept Duel Requests", "autoAcceptDuel", true)

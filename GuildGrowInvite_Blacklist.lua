@@ -1,7 +1,3 @@
-------------------------------------------------------------
--- GuildGrowInvite Blacklist Manager UI
-------------------------------------------------------------
-
 local GGI = GuildGrowInvite
 
 local LSM = LibStub("LibSharedMedia-3.0", true)
@@ -38,11 +34,26 @@ local fontFile = GetLSMFont("Friz Quadrata TT") or "Fonts\\FRIZQT__.TTF"
 local blacklistFrame = nil
 local ROW_HEIGHT = 22
 
+local function SetBtnFont(btn, font, size)
+    local text = btn.GetFontString and btn:GetFontString()
+    if not text and btn.GetRegions then
+        for _, r in ipairs({btn:GetRegions()}) do
+            if r and r.GetObjectType and r:GetObjectType() == "FontString" then
+                text = r
+                break
+            end
+        end
+    end
+    if text then
+        text:SetFont(font, size)
+    end
+end
+
 local function CreateBlacklistFrame()
     if blacklistFrame then return blacklistFrame end
 
     blacklistFrame = CreateFrame("Frame", "GuildGrowInviteBlacklistFrame", UIParent)
-    blacklistFrame:SetSize(500, 550)
+    blacklistFrame:SetSize(520, 560)
     blacklistFrame:SetPoint("CENTER")
     blacklistFrame:SetFrameStrata("DIALOG")
     blacklistFrame:SetMovable(true)
@@ -57,33 +68,31 @@ local function CreateBlacklistFrame()
         tile = true, tileSize = 32, edgeSize = 16,
         insets = { left = 5, right = 5, top = 5, bottom = 5 }
     })
-    blacklistFrame:SetBackdropColor(0.06, 0.06, 0.1, 0.95)
-    blacklistFrame:SetBackdropBorderColor(0.3, 0.3, 0.5, 0.8)
+    blacklistFrame:SetBackdropColor(0.04, 0.04, 0.08, 0.96)
+    blacklistFrame:SetBackdropBorderColor(0.35, 0.35, 0.65, 0.85)
 
-    -- Title bar
-    blacklistFrame.titleBg = blacklistFrame:CreateTexture(nil, "ARTWORK")
-    blacklistFrame.titleBg:SetTexture(statusbarFile)
-    blacklistFrame.titleBg:SetSize(440, 36)
-    blacklistFrame.titleBg:SetPoint("TOP", blacklistFrame, "TOP", 0, -6)
-    blacklistFrame.titleBg:SetVertexColor(0.3, 0.3, 0.6, 0.8)
+    local titleBg = blacklistFrame:CreateTexture(nil, "ARTWORK")
+    titleBg:SetTexture(statusbarFile)
+    titleBg:SetSize(480, 38)
+    titleBg:SetPoint("TOP", blacklistFrame, "TOP", 0, -6)
+    titleBg:SetVertexColor(0.28, 0.28, 0.58, 0.9)
 
-    blacklistFrame.title = blacklistFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    blacklistFrame.title:SetFont(fontFile, 14)
-    blacklistFrame.title:SetPoint("TOP", blacklistFrame.titleBg, "TOP", 0, -9)
-    blacklistFrame.title:SetText("Blacklist Manager")
-    blacklistFrame.title:SetTextColor(0.8, 0.8, 1, 1)
+    local title = blacklistFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    title:SetFont(fontFile, 14)
+    title:SetPoint("TOP", titleBg, "TOP", 0, -10)
+    title:SetText("Blacklist Manager")
+    title:SetTextColor(0.85, 0.85, 1, 1)
 
     blacklistFrame.closeBtn = CreateFrame("Button", nil, blacklistFrame, "UIPanelCloseButton")
     blacklistFrame.closeBtn:SetPoint("TOPRIGHT", blacklistFrame, "TOPRIGHT", -5, -5)
     blacklistFrame.closeBtn:SetScript("OnClick", function() blacklistFrame:Hide() end)
 
-    -- List content area with scrollbar
     blacklistFrame.content = CreateFrame("ScrollFrame", "GuildGrowInviteBlacklistScrollFrame", blacklistFrame, "FauxScrollFrameTemplate")
-    blacklistFrame.content:SetSize(430, 350)
+    blacklistFrame.content:SetSize(450, 360)
     blacklistFrame.content:SetPoint("TOPLEFT", blacklistFrame, "TOPLEFT", 20, -55)
 
     blacklistFrame.scrollChild = CreateFrame("Frame")
-    blacklistFrame.scrollChild:SetSize(430, 350)
+    blacklistFrame.scrollChild:SetSize(450, 360)
     blacklistFrame.content:SetScrollChild(blacklistFrame.scrollChild)
 
     blacklistFrame.content:SetBackdrop({
@@ -92,30 +101,34 @@ local function CreateBlacklistFrame()
         tile = true, tileSize = 16, edgeSize = 12,
         insets = { left = 4, right = 4, top = 4, bottom = 4 }
     })
-    blacklistFrame.content:SetBackdropColor(0, 0, 0, 0.3)
-    blacklistFrame.content:SetBackdropBorderColor(0.2, 0.2, 0.35, 0.6)
+    blacklistFrame.content:SetBackdropColor(0, 0, 0, 0.35)
+    blacklistFrame.content:SetBackdropBorderColor(0.2, 0.2, 0.4, 0.6)
 
-    -- Empty message
+    local colH1 = blacklistFrame.scrollChild:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
+    colH1:SetFont(fontFile, 10)
+    colH1:SetPoint("TOPLEFT", blacklistFrame.scrollChild, "TOPLEFT", 8, -8)
+    colH1:SetText("Name")
+    colH1:SetTextColor(0.5, 0.55, 0.85, 1)
+
+    local colH2 = blacklistFrame.scrollChild:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
+    colH2:SetFont(fontFile, 10)
+    colH2:SetPoint("LEFT", colH1, "RIGHT", 4, 0)
+    colH2:SetText("Type / Expiry")
+    colH2:SetTextColor(0.5, 0.55, 0.85, 1)
+
     blacklistFrame.emptyText = blacklistFrame.content:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
     blacklistFrame.emptyText:SetPoint("CENTER", blacklistFrame.content, "CENTER")
     blacklistFrame.emptyText:SetWidth(380)
     blacklistFrame.emptyText:SetWordWrap(true)
     blacklistFrame.emptyText:SetText("No blacklisted players.")
-    blacklistFrame.emptyText:SetTextColor(0.6, 0.6, 0.7, 1)
+    blacklistFrame.emptyText:SetTextColor(0.6, 0.6, 0.75, 1)
     blacklistFrame.emptyText:Hide()
-
-    -- Add to blacklist section
-    local addPanel = blacklistFrame:CreateTexture(nil, "ARTWORK")
-    addPanel:SetTexture(bgFile)
-    addPanel:SetSize(440, 50)
-    addPanel:SetPoint("TOPLEFT", blacklistFrame, "TOPLEFT", 18, -420)
-    addPanel:SetVertexColor(0.1, 0.1, 0.18, 0.6)
 
     local addLabel = blacklistFrame:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
     addLabel:SetFont(fontFile, 11)
-    addLabel:SetPoint("TOPLEFT", addPanel, "TOPLEFT", 15, -8)
+    addLabel:SetPoint("TOPLEFT", blacklistFrame, "TOPLEFT", 22, -430)
     addLabel:SetText("Add to permanent blacklist:")
-    addLabel:SetTextColor(0.7, 0.7, 0.8, 1)
+    addLabel:SetTextColor(0.65, 0.65, 0.8, 1)
 
     blacklistFrame.addBox = CreateFrame("EditBox", nil, blacklistFrame)
     blacklistFrame.addBox:SetAutoFocus(false)
@@ -127,7 +140,8 @@ local function CreateBlacklistFrame()
         tile = true, tileSize = 16, edgeSize = 12,
         insets = { left = 3, right = 3, top = 3, bottom = 3 }
     })
-    blacklistFrame.addBox:SetBackdropColor(0.08, 0.08, 0.12, 0.8)
+    blacklistFrame.addBox:SetBackdropColor(0.06, 0.06, 0.1, 0.85)
+    blacklistFrame.addBox:SetBackdropBorderColor(0.2, 0.2, 0.35, 0.7)
     blacklistFrame.addBox:SetTextInsets(6, 0, 0, 0)
     blacklistFrame.addBox:SetFont(fontFile, 11)
     blacklistFrame.addBox:SetTextColor(1, 1, 1, 1)
@@ -136,6 +150,7 @@ local function CreateBlacklistFrame()
     blacklistFrame.addBtn:SetSize(80, 22)
     blacklistFrame.addBtn:SetPoint("LEFT", blacklistFrame.addBox, "RIGHT", 8, 0)
     blacklistFrame.addBtn:SetText("Add")
+    SetBtnFont(blacklistFrame.addBtn, fontFile, 10)
     blacklistFrame.addBtn:SetScript("OnClick", function()
         local name = blacklistFrame.addBox:GetText():trim()
         if name ~= "" then
@@ -192,28 +207,23 @@ function GGI.RefreshBlacklist()
     local yOffset = -8
     for i, entry in ipairs(all) do
         local row = CreateFrame("Button", nil, blacklistFrame.scrollChild)
-        row:SetSize(410, ROW_HEIGHT)
+        row:SetSize(430, ROW_HEIGHT)
         row:SetPoint("TOPLEFT", blacklistFrame.scrollChild, "TOPLEFT", 8, yOffset)
 
-        -- Row highlight on hover
         row:SetScript("OnEnter", function(self)
-            self:SetBackdropColor(0.15, 0.15, 0.25, 0.5)
+            self:SetBackdropColor(0.15, 0.15, 0.28, 0.5)
         end)
         row:SetScript("OnLeave", function(self)
-            self:SetBackdropColor(0, 0, 0, 0)
+            self:SetBackdropColor(i % 2 == 0 and 0.06 or 0, i % 2 == 0 and 0.06 or 0, i % 2 == 0 and 0.1 or 0, i % 2 == 0 and 0.4 or 0)
         end)
         row:SetBackdrop({
             bgFile = bgFile,
             tile = true, tileSize = 16,
             insets = { left = 0, right = 0, top = 0, bottom = 0 }
         })
-        row:SetBackdropColor(0, 0, 0, 0)
+        local rowColor = i % 2 == 0 and 0.06 or 0
+        row:SetBackdropColor(rowColor, rowColor, i % 2 == 0 and 0.1 or 0, i % 2 == 0 and 0.4 or 0)
 
-        if i % 2 == 0 then
-            row:SetBackdropColor(0.08, 0.08, 0.12, 0.4)
-        end
-
-        -- Name
         local nameText = row:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
         nameText:SetFont(fontFile, 11)
         nameText:SetPoint("LEFT", row, "LEFT", 6, 0)
@@ -222,11 +232,10 @@ function GGI.RefreshBlacklist()
         nameText:SetText(entry.name)
         nameText:SetTextColor(0.9, 0.9, 1, 1)
 
-        -- Type and expiry
         local infoText = row:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
         infoText:SetFont(fontFile, 10)
         infoText:SetPoint("LEFT", nameText, "RIGHT", 8, 0)
-        infoText:SetWidth(150)
+        infoText:SetWidth(180)
         infoText:SetJustifyH("LEFT")
 
         if entry.type == "Permanent" then
@@ -239,13 +248,12 @@ function GGI.RefreshBlacklist()
             infoText:SetTextColor(0.5, 1, 0.5, 1)
         end
 
-        -- Remove button
+        local entryName = entry.name
         local removeBtn = CreateFrame("Button", nil, row, "UIPanelButtonTemplate")
-        removeBtn:SetSize(50, 18)
+        removeBtn:SetSize(52, 18)
         removeBtn:SetPoint("RIGHT", row, "RIGHT", -4, 0)
         removeBtn:SetText("Remove")
-
-        local entryName = entry.name
+        SetBtnFont(removeBtn, fontFile, 9)
         removeBtn:SetScript("OnClick", function()
             GGI.RemoveFromBlacklist(entryName)
             C_Timer.After(0.1, function()

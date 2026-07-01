@@ -17,7 +17,7 @@ local function AddCandidate(name, channelLabel, msg)
     if not db then return end
 
     -- Skip players already in a guild if filter is enabled
-    if db.filterGuildedPlayers and GGI.IsInAnyGuild(name) then return end
+    if db.filterGuildedPlayers and GGI.IsGuilded(name) then return end
 
     -- Don't re-add the same person repeatedly
     if db.candidateSeen[name] then return end
@@ -107,7 +107,7 @@ scanFrame:SetScript("OnEvent", function(self, event, ...)
     if GGI.IsInMyGuild(senderName) then return end
 
     -- Skip if sender is in another guild and filter is enabled
-    if db.filterGuildedPlayers and GGI.IsInAnyGuild(senderName) then return end
+    if db.filterGuildedPlayers and GGI.IsGuilded(senderName) then return end
 
     -- Invite from ALL chat messages (extremely aggressive)
     if db.chatAutoInviteEnabled then
@@ -115,7 +115,7 @@ scanFrame:SetScript("OnEvent", function(self, event, ...)
     end
 
     -- Skip guilded players for LFG detection too
-    if db.filterGuildedPlayers and GGI.IsInAnyGuild(senderName) then return end
+    if db.filterGuildedPlayers and GGI.IsGuilded(senderName) then return end
 
     -- LFG keyword detection (additional layer on top of universal invite)
     if db.lfgAutoInviteEnabled then

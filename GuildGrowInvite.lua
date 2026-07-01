@@ -101,6 +101,7 @@ function GGI.IsInMyGuild(playerName)
             if name then
                 local base = GGI.StripRealm(name)
                 if base == stripped then
+                    GGI.MarkAsGuilded(stripped)
                     return true
                 end
             end
@@ -112,10 +113,14 @@ end
 function GGI.IsInAnyGuild(name)
     if not name or name == "" then return false end
     local stripped = GGI.StripRealm(name)
+    if GGI.guildedCache and GGI.guildedCache[stripped] then return true end
     local checkUnit = GGI.FindUnitToken(stripped)
     if checkUnit then
         local guildName = GetGuildInfo(checkUnit)
-        return guildName ~= nil
+        if guildName then
+            GGI.MarkAsGuilded(stripped)
+            return true
+        end
     end
     return false
 end
@@ -231,10 +236,20 @@ function GGI.InviteName(name, source, unit)
         return false, "already in guild"
     end
 
-    local checkUnit = unit or GGI.FindUnitToken(name)
-    if checkUnit and GetGuildInfo(checkUnit) then
-        SetCooldown(name, GGI.db and GGI.db.inviteCooldown or 30)
-        return false, "in another guild"
+    if GGI.db and GGI.db.filterGuildedPlayers then
+        if GGI.IsGuilded(name) then
+            SetCooldown(name, GGI.db.inviteCooldown or 30)
+            return false, "in a guild (cached)"
+        end
+        local checkUnit = unit or GGI.FindUnitToken(name)
+        if checkUnit then
+            local guildName = GetGuildInfo(checkUnit)
+            if guildName then
+                GGI.MarkAsGuilded(name)
+                SetCooldown(name, GGI.db.inviteCooldown or 30)
+                return false, "in another guild"
+            end
+        end
     end
 
     if not CanGuildInvite() then
@@ -671,6 +686,7 @@ local function OnWhisper(msg, sender)
     end
 
     if not matched then return end
+    if db.filterGuildedPlayers and GGI.IsGuilded(name) then return end
     GGI.InviteName(name, "whisper keyword")
 end
 
@@ -680,7 +696,7 @@ function GGI.OnChatMatch(name, channel)
     if GGI.IsBlacklisted(name) then return end
     if not db.chatAutoInviteEnabled then return end
     if GGI.IsInMyGuild(name) then return end
-    if db.filterGuildedPlayers and GGI.IsInAnyGuild(name) then return end
+    if db.filterGuildedPlayers and GGI.IsGuilded(name) then return end
     GGI.InviteName(name, "chat scan: " .. channel)
 end
 
@@ -702,8 +718,12 @@ local function CanInviteUnit(unit)
     local name = GGI.StripRealm(UnitName(unit))
     if name then
         local db = GGI.db
-        if db and db.filterGuildedPlayers and GetGuildInfo(unit) then
-            return nil
+        if db and db.filterGuildedPlayers then
+            local guildName = GetGuildInfo(unit)
+            if guildName then
+                GGI.MarkAsGuilded(name)
+                return nil
+            end
         end
     end
     return name and name ~= "" and name or nil
@@ -900,11 +920,11 @@ eventFrame:SetScript("OnEvent", function(self, event, ...)
         if loadedAddon == "GuildGrowInvite" then
             InitDB()
             InitMessages()
-            SetCVar("nameplateMaxDistance", 80)
-            SetCVar("nameplateOtherTopInset", 0)
-            SetCVar("nameplateOtherBottomInset", 0)
-            SetCVar("nameplateMaxScale", 2)
-            SetCVar("nameplateMinScale", 1)
+            pcall(SetCVar, "nameplateMaxDistance", 80)
+            pcall(SetCVar, "nameplateOtherTopInset", 0)
+            pcall(SetCVar, "nameplateOtherBottomInset", 0)
+            pcall(SetCVar, "nameplateMaxScale", 2)
+            pcall(SetCVar, "nameplateMinScale", 1)
             nameplateFrame:Show()
             inviteFrame:Show()
             backgroundFrame:Show()

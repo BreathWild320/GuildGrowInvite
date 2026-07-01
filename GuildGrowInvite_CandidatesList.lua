@@ -1,7 +1,3 @@
-------------------------------------------------------------
--- GuildGrowInvite Candidates List UI
-------------------------------------------------------------
-
 local GGI = GuildGrowInvite
 
 local LSM = LibStub("LibSharedMedia-3.0", true)
@@ -38,33 +34,33 @@ local fontFile = GetLSMFont("Friz Quadrata TT") or "Fonts\\FRIZQT__.TTF"
 local candidatesFrame = nil
 local ROW_HEIGHT = 22
 
--- Cache guild status for candidates to avoid repeated lookups
-local guildStatusCache = {}
-
 local function GetGuildStatus(name)
     if not name then return "unknown" end
-    if guildStatusCache[name] then return guildStatusCache[name] end
-    if GGI.IsInMyGuild(name) then
-        guildStatusCache[name] = "mine"
-        return "mine"
-    end
-    if GGI.IsInAnyGuild(name) then
-        guildStatusCache[name] = "other"
-        return "other"
-    end
-    guildStatusCache[name] = "none"
+    if GGI.IsInMyGuild(name) then return "mine" end
+    if GGI.IsGuilded(name) then return "other" end
     return "none"
 end
 
-local function ClearGuildCache()
-    guildStatusCache = {}
+local function SetBtnFont(btn, font, size)
+    local text = btn.GetFontString and btn:GetFontString()
+    if not text and btn.GetRegions then
+        for _, r in ipairs({btn:GetRegions()}) do
+            if r and r.GetObjectType and r:GetObjectType() == "FontString" then
+                text = r
+                break
+            end
+        end
+    end
+    if text then
+        text:SetFont(font, size)
+    end
 end
 
 local function CreateCandidatesFrame()
     if candidatesFrame then return candidatesFrame end
 
     candidatesFrame = CreateFrame("Frame", "GuildGrowInviteCandidatesFrame", UIParent)
-    candidatesFrame:SetSize(620, 650)
+    candidatesFrame:SetSize(640, 660)
     candidatesFrame:SetPoint("CENTER")
     candidatesFrame:SetFrameStrata("DIALOG")
     candidatesFrame:SetMovable(true)
@@ -79,32 +75,30 @@ local function CreateCandidatesFrame()
         tile = true, tileSize = 32, edgeSize = 16,
         insets = { left = 5, right = 5, top = 5, bottom = 5 }
     })
-    candidatesFrame:SetBackdropColor(0.06, 0.06, 0.1, 0.95)
-    candidatesFrame:SetBackdropBorderColor(0.3, 0.3, 0.5, 0.8)
+    candidatesFrame:SetBackdropColor(0.04, 0.04, 0.08, 0.96)
+    candidatesFrame:SetBackdropBorderColor(0.35, 0.35, 0.65, 0.85)
 
-    -- Title bar
-    candidatesFrame.titleBg = candidatesFrame:CreateTexture(nil, "ARTWORK")
-    candidatesFrame.titleBg:SetTexture(statusbarFile)
-    candidatesFrame.titleBg:SetSize(560, 36)
-    candidatesFrame.titleBg:SetPoint("TOP", candidatesFrame, "TOP", 0, -6)
-    candidatesFrame.titleBg:SetVertexColor(0.3, 0.3, 0.6, 0.8)
+    local titleBg = candidatesFrame:CreateTexture(nil, "ARTWORK")
+    titleBg:SetTexture(statusbarFile)
+    titleBg:SetSize(600, 38)
+    titleBg:SetPoint("TOP", candidatesFrame, "TOP", 0, -6)
+    titleBg:SetVertexColor(0.28, 0.28, 0.58, 0.9)
 
-    candidatesFrame.title = candidatesFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    candidatesFrame.title:SetFont(fontFile, 14)
-    candidatesFrame.title:SetPoint("TOP", candidatesFrame.titleBg, "TOP", 0, -9)
-    candidatesFrame.title:SetText("Recruitment Candidates")
-    candidatesFrame.title:SetTextColor(0.8, 0.8, 1, 1)
+    local title = candidatesFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    title:SetFont(fontFile, 14)
+    title:SetPoint("TOP", titleBg, "TOP", 0, -10)
+    title:SetText("Recruitment Candidates")
+    title:SetTextColor(0.85, 0.85, 1, 1)
 
     candidatesFrame.closeBtn = CreateFrame("Button", nil, candidatesFrame, "UIPanelCloseButton")
     candidatesFrame.closeBtn:SetPoint("TOPRIGHT", candidatesFrame, "TOPRIGHT", -5, -5)
     candidatesFrame.closeBtn:SetScript("OnClick", function() candidatesFrame:Hide() end)
 
-    -- Category buttons
     local categoryLabel = candidatesFrame:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
     categoryLabel:SetFont(fontFile, 11)
-    categoryLabel:SetPoint("TOPLEFT", candidatesFrame, "TOPLEFT", 20, -50)
+    categoryLabel:SetPoint("TOPLEFT", candidatesFrame, "TOPLEFT", 20, -54)
     categoryLabel:SetText("Filter:")
-    categoryLabel:SetTextColor(0.6, 0.6, 0.9, 1)
+    categoryLabel:SetTextColor(0.55, 0.55, 0.8, 1)
 
     local categoryButtons = {}
     local categories = {"All", "Channel", "Say", "Yell", "Party", "Raid", "Instance", "Battleground", "Guild", "Officer"}
@@ -121,8 +115,11 @@ local function CreateCandidatesFrame()
         local row = math.floor((i - 1) / 5)
         local col = (i - 1) % 5
         btn:SetPoint("TOPLEFT", categoryLabel, "BOTTOMLEFT", col * 105, -4 - row * 20)
-        _G[btn:GetName() .. "Text"]:SetFont(fontFile, 9)
-        _G[btn:GetName() .. "Text"]:SetText(category)
+        local bText = (btn.GetFontString and btn:GetFontString()) or _G[btn:GetName() .. "Text"]
+        if bText then
+            bText:SetFont(fontFile, 9)
+            bText:SetText(category)
+        end
         btn.category = category
         btn:SetChecked(GGI.db.selectedCategory == category)
         btn:SetScript("OnClick", function(self)
@@ -131,13 +128,12 @@ local function CreateCandidatesFrame()
         categoryButtons[#categoryButtons + 1] = btn
     end
 
-    -- Candidates list frame with scrollbar
     candidatesFrame.listFrame = CreateFrame("ScrollFrame", "GuildGrowInviteCandidatesScrollFrame", candidatesFrame, "FauxScrollFrameTemplate")
-    candidatesFrame.listFrame:SetSize(570, 400)
-    candidatesFrame.listFrame:SetPoint("TOPLEFT", candidatesFrame, "TOPLEFT", 20, -95)
+    candidatesFrame.listFrame:SetSize(590, 400)
+    candidatesFrame.listFrame:SetPoint("TOPLEFT", candidatesFrame, "TOPLEFT", 20, -100)
 
     candidatesFrame.scrollChild = CreateFrame("Frame")
-    candidatesFrame.scrollChild:SetSize(570, 400)
+    candidatesFrame.scrollChild:SetSize(590, 400)
     candidatesFrame.listFrame:SetScrollChild(candidatesFrame.scrollChild)
 
     candidatesFrame.listFrame:SetBackdrop({
@@ -146,28 +142,22 @@ local function CreateCandidatesFrame()
         tile = true, tileSize = 16, edgeSize = 12,
         insets = { left = 4, right = 4, top = 4, bottom = 4 }
     })
-    candidatesFrame.listFrame:SetBackdropColor(0, 0, 0, 0.3)
-    candidatesFrame.listFrame:SetBackdropBorderColor(0.2, 0.2, 0.35, 0.6)
+    candidatesFrame.listFrame:SetBackdropColor(0, 0, 0, 0.35)
+    candidatesFrame.listFrame:SetBackdropBorderColor(0.2, 0.2, 0.4, 0.6)
 
-    -- Column headers
-    local headerY = -12
-    local function CreateColHeader(text, xOff, width)
+    local colHeaders = {"Name", "Channel", "Message", "Guild"}
+    local colX = {8, 122, 188, 400}
+    local colW = {110, 60, 210, 70}
+    for i = 1, 4 do
         local h = candidatesFrame.scrollChild:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
         h:SetFont(fontFile, 10)
-        h:SetPoint("TOPLEFT", candidatesFrame.scrollChild, "TOPLEFT", xOff, headerY)
-        h:SetWidth(width)
+        h:SetPoint("TOPLEFT", candidatesFrame.scrollChild, "TOPLEFT", colX[i], -12)
+        h:SetWidth(colW[i])
         h:SetJustifyH("LEFT")
-        h:SetText(text)
-        h:SetTextColor(0.5, 0.5, 0.8, 1)
-        return h
+        h:SetText(colHeaders[i])
+        h:SetTextColor(0.5, 0.55, 0.85, 1)
     end
 
-    CreateColHeader("Name", 8, 110)
-    CreateColHeader("Channel", 118, 60)
-    CreateColHeader("Message", 180, 210)
-    CreateColHeader("Guild", 390, 80)
-
-    -- Empty message
     candidatesFrame.emptyText = candidatesFrame:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
     candidatesFrame.emptyText:SetPoint("CENTER", candidatesFrame.listFrame, "CENTER")
     candidatesFrame.emptyText:SetWidth(420)
@@ -175,29 +165,31 @@ local function CreateCandidatesFrame()
     candidatesFrame.emptyText:SetText("No candidates. Enable chat-scan to find players.")
     candidatesFrame.emptyText:Hide()
 
-    -- Bottom buttons
-    local inviteBtn = CreateFrame("Button", nil, candidatesFrame, "UIPanelButtonTemplate")
-    inviteBtn:SetSize(100, 22)
-    inviteBtn:SetPoint("BOTTOMLEFT", candidatesFrame, "BOTTOMLEFT", 16, 14)
-    inviteBtn:SetText("Blacklist Manager")
-    inviteBtn:SetScript("OnClick", function()
+    local bottomBtn1 = CreateFrame("Button", nil, candidatesFrame, "UIPanelButtonTemplate")
+    bottomBtn1:SetSize(120, 22)
+    bottomBtn1:SetPoint("BOTTOMLEFT", candidatesFrame, "BOTTOMLEFT", 25, 14)
+    bottomBtn1:SetText("Blacklist Manager")
+    SetBtnFont(bottomBtn1, fontFile, 10)
+    bottomBtn1:SetScript("OnClick", function()
         GGI.ToggleBlacklistWindow()
     end)
 
-    local refreshBtn = CreateFrame("Button", nil, candidatesFrame, "UIPanelButtonTemplate")
-    refreshBtn:SetSize(80, 22)
-    refreshBtn:SetPoint("LEFT", inviteBtn, "RIGHT", 8, 0)
-    refreshBtn:SetText("Refresh")
-    refreshBtn:SetScript("OnClick", function()
-        ClearGuildCache()
+    local bottomBtn2 = CreateFrame("Button", nil, candidatesFrame, "UIPanelButtonTemplate")
+    bottomBtn2:SetSize(80, 22)
+    bottomBtn2:SetPoint("LEFT", bottomBtn1, "RIGHT", 10, 0)
+    bottomBtn2:SetText("Refresh")
+    SetBtnFont(bottomBtn2, fontFile, 10)
+    bottomBtn2:SetScript("OnClick", function()
+        GGI.ClearGuildedCache()
         GGI.RefreshCandidatesList()
     end)
 
-    local closeBtn = CreateFrame("Button", nil, candidatesFrame, "UIPanelButtonTemplate")
-    closeBtn:SetSize(100, 22)
-    closeBtn:SetPoint("BOTTOMRIGHT", candidatesFrame, "BOTTOMRIGHT", -16, 14)
-    closeBtn:SetText("Close")
-    closeBtn:SetScript("OnClick", function()
+    local bottomBtn3 = CreateFrame("Button", nil, candidatesFrame, "UIPanelButtonTemplate")
+    bottomBtn3:SetSize(100, 22)
+    bottomBtn3:SetPoint("BOTTOMRIGHT", candidatesFrame, "BOTTOMRIGHT", -25, 14)
+    bottomBtn3:SetText("Close")
+    SetBtnFont(bottomBtn3, fontFile, 10)
+    bottomBtn3:SetScript("OnClick", function()
         candidatesFrame:Hide()
     end)
 
@@ -233,8 +225,7 @@ function GGI.RefreshCandidatesList()
 
     for _, entry in ipairs(db.candidateList) do
         if CategoryMatches(entry, category) and not GGI.IsBlacklisted(entry.name) then
-            -- If filter is enabled, skip guilded players
-            if not (db.filterGuildedPlayers and GetGuildStatus(entry.name) == "other") then
+            if not (db.filterGuildedPlayers and GGI.IsGuilded(entry.name)) then
                 table.insert(filtered, entry)
             end
         end
@@ -255,29 +246,23 @@ function GGI.RefreshCandidatesList()
     local yOffset = -28
     for i, entry in ipairs(filtered) do
         local row = CreateFrame("Button", nil, candidatesFrame.scrollChild)
-        row:SetSize(550, ROW_HEIGHT)
+        row:SetSize(570, ROW_HEIGHT)
         row:SetPoint("TOPLEFT", candidatesFrame.scrollChild, "TOPLEFT", 8, yOffset)
 
-        -- Row highlight on hover
         row:SetScript("OnEnter", function(self)
-            self:SetBackdropColor(0.15, 0.15, 0.25, 0.5)
+            self:SetBackdropColor(0.15, 0.15, 0.28, 0.5)
         end)
         row:SetScript("OnLeave", function(self)
-            self:SetBackdropColor(0, 0, 0, 0)
+            self:SetBackdropColor(i % 2 == 0 and 0.06 or 0, i % 2 == 0 and 0.06 or 0, i % 2 == 0 and 0.1 or 0, i % 2 == 0 and 0.4 or 0)
         end)
         row:SetBackdrop({
             bgFile = bgFile,
             tile = true, tileSize = 16,
             insets = { left = 0, right = 0, top = 0, bottom = 0 }
         })
-        row:SetBackdropColor(0, 0, 0, 0)
+        local rowColor = i % 2 == 0 and 0.06 or 0
+        row:SetBackdropColor(rowColor, rowColor, i % 2 == 0 and 0.1 or 0, i % 2 == 0 and 0.4 or 0)
 
-        -- Alternate row background
-        if i % 2 == 0 then
-            row:SetBackdropColor(0.08, 0.08, 0.12, 0.4)
-        end
-
-        -- Name (clickable to whisper)
         local nameText = row:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
         nameText:SetFont(fontFile, 11)
         nameText:SetPoint("LEFT", row, "LEFT", 6, 0)
@@ -286,16 +271,14 @@ function GGI.RefreshCandidatesList()
         nameText:SetText(entry.name)
         nameText:SetTextColor(0.9, 0.9, 1, 1)
 
-        -- Channel
         local channelText = row:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
         channelText:SetFont(fontFile, 10)
         channelText:SetPoint("LEFT", nameText, "RIGHT", 4, 0)
         channelText:SetWidth(60)
         channelText:SetJustifyH("LEFT")
         channelText:SetText("[" .. (entry.channel or "?") .. "]")
-        channelText:SetTextColor(0.5, 0.7, 1, 1)
+        channelText:SetTextColor(0.45, 0.65, 1, 1)
 
-        -- Message
         local infoText = row:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
         infoText:SetFont(fontFile, 10)
         infoText:SetPoint("LEFT", channelText, "RIGHT", 6, 0)
@@ -304,7 +287,6 @@ function GGI.RefreshCandidatesList()
         infoText:SetText(entry.msg or "")
         infoText:SetTextColor(0.6, 0.6, 0.7, 1)
 
-        -- Guild status
         local status = GetGuildStatus(entry.name)
         local guildText = row:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
         guildText:SetFont(fontFile, 10)
@@ -326,28 +308,27 @@ function GGI.RefreshCandidatesList()
             guildText:SetTextColor(0.4, 0.4, 0.4, 1)
         end
 
-        -- Invite button
-        local inviteBtn = CreateFrame("Button", nil, row, "UIPanelButtonTemplate")
-        inviteBtn:SetSize(50, 18)
-        inviteBtn:SetPoint("RIGHT", row, "RIGHT", -52, 0)
-        inviteBtn:SetText("Invite")
-
         local entryName = entry.name
+
+        local inviteBtn = CreateFrame("Button", nil, row, "UIPanelButtonTemplate")
+        inviteBtn:SetSize(52, 18)
+        inviteBtn:SetPoint("RIGHT", row, "RIGHT", -56, 0)
+        inviteBtn:SetText("Invite")
+        SetBtnFont(inviteBtn, fontFile, 9)
         inviteBtn:SetScript("OnClick", function()
             GGI.InviteName(entryName, "UI candidate list")
-            ClearGuildCache()
+            GGI.ClearGuildedCache()
             GGI.RefreshCandidatesList()
         end)
 
-        -- Blacklist button
-        local blacklistBtn = CreateFrame("Button", nil, row, "UIPanelButtonTemplate")
-        blacklistBtn:SetSize(40, 18)
-        blacklistBtn:SetPoint("RIGHT", row, "RIGHT", -4, 0)
-        blacklistBtn:SetText("Block")
-
-        blacklistBtn:SetScript("OnClick", function()
+        local blockBtn = CreateFrame("Button", nil, row, "UIPanelButtonTemplate")
+        blockBtn:SetSize(42, 18)
+        blockBtn:SetPoint("RIGHT", row, "RIGHT", -4, 0)
+        blockBtn:SetText("Block")
+        SetBtnFont(blockBtn, fontFile, 9)
+        blockBtn:SetScript("OnClick", function()
             GGI.AddToBlacklist(entryName)
-            ClearGuildCache()
+            GGI.ClearGuildedCache()
             GGI.RefreshCandidatesList()
             print("|cff00ccff[GuildGrowInvite]|r Blocked " .. entryName)
         end)
@@ -363,7 +344,7 @@ function GGI.ToggleCandidatesWindow()
     if frame:IsShown() then
         frame:Hide()
     else
-        ClearGuildCache()
+        GGI.ClearGuildedCache()
         frame:Show()
         GGI.RefreshCandidatesList()
     end
