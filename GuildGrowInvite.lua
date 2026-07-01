@@ -37,6 +37,7 @@ local function InitDB()
     if db.autoAcceptDuel == nil then db.autoAcceptDuel = true end
     if db.autoAcceptTrade == nil then db.autoAcceptTrade = true end
     if db.autoAcceptParty == nil then db.autoAcceptParty = false end
+    if db.filterGuildedPlayers == nil then db.filterGuildedPlayers = true end
     if db.inviteCooldown == nil then db.inviteCooldown = 30 end
     db.candidateList = db.candidateList or {}
     db.candidateSeen = db.candidateSeen or {}
@@ -108,6 +109,17 @@ function GGI.IsInMyGuild(playerName)
     return false
 end
 
+function GGI.IsInAnyGuild(name)
+    if not name or name == "" then return false end
+    local stripped = GGI.StripRealm(name)
+    local checkUnit = GGI.FindUnitToken(stripped)
+    if checkUnit then
+        local guildName = GetGuildInfo(checkUnit)
+        return guildName ~= nil
+    end
+    return false
+end
+
 local function BuildKeywordVariants(keyword)
     local variants = {}
     local lower = keyword:lower()
@@ -146,6 +158,7 @@ end
 local inviteCooldowns = {}
 local nameplateAttempted = {}
 local nameplateResetCounter = 0
+local activePlates = {}
 
 local function IsOnCooldown(name)
     local expiry = inviteCooldowns[name]
@@ -164,7 +177,7 @@ local function CleanExpiredCooldowns()
         end
     end
     nameplateResetCounter = nameplateResetCounter + 1
-    if nameplateResetCounter >= 200 then
+    if nameplateResetCounter >= 60 then
         nameplateAttempted = {}
         nameplateResetCounter = 0
     end
@@ -667,6 +680,7 @@ function GGI.OnChatMatch(name, channel)
     if GGI.IsBlacklisted(name) then return end
     if not db.chatAutoInviteEnabled then return end
     if GGI.IsInMyGuild(name) then return end
+    if db.filterGuildedPlayers and GGI.IsInAnyGuild(name) then return end
     GGI.InviteName(name, "chat scan: " .. channel)
 end
 
@@ -682,9 +696,16 @@ local function CanInviteUnit(unit)
     if not UnitExists(unit) or not UnitIsPlayer(unit) or UnitIsUnit(unit, "player") then
         return nil
     end
+    if not UnitIsVisible(unit) then return nil end
     if UnitIsInMyGuild(unit) then return nil end
     if not UnitIsConnected(unit) then return nil end
     local name = GGI.StripRealm(UnitName(unit))
+    if name then
+        local db = GGI.db
+        if db and db.filterGuildedPlayers and GetGuildInfo(unit) then
+            return nil
+        end
+    end
     return name and name ~= "" and name or nil
 end
 
@@ -867,6 +888,7 @@ eventFrame:RegisterEvent("CHAT_MSG_WHISPER")
 eventFrame:RegisterEvent("PLAYER_TARGET_CHANGED")
 eventFrame:RegisterEvent("UPDATE_MOUSEOVER_UNIT")
 eventFrame:RegisterEvent("NAME_PLATE_UNIT_ADDED")
+eventFrame:RegisterEvent("NAME_PLATE_UNIT_REMOVED")
 eventFrame:RegisterEvent("PARTY_INVITE_REQUEST")
 eventFrame:RegisterEvent("DUEL_REQUESTED")
 eventFrame:RegisterEvent("DUEL_FINISHED")
@@ -878,6 +900,11 @@ eventFrame:SetScript("OnEvent", function(self, event, ...)
         if loadedAddon == "GuildGrowInvite" then
             InitDB()
             InitMessages()
+            SetCVar("nameplateMaxDistance", 80)
+            SetCVar("nameplateOtherTopInset", 0)
+            SetCVar("nameplateOtherBottomInset", 0)
+            SetCVar("nameplateMaxScale", 2)
+            SetCVar("nameplateMinScale", 1)
             nameplateFrame:Show()
             inviteFrame:Show()
             backgroundFrame:Show()
@@ -893,7 +920,17 @@ eventFrame:SetScript("OnEvent", function(self, event, ...)
     elseif event == "NAME_PLATE_UNIT_ADDED" then
         local unit = ...
         if unit then
+            activePlates[unit] = true
             GGI.OnNearbyMatch(unit, "nameplate added")
+        end
+    elseif event == "NAME_PLATE_UNIT_REMOVED" then
+        local unit = ...
+        if unit then
+            activePlates[unit] = nil
+            local name = GGI.StripRealm(UnitName(unit))
+            if name then
+                nameplateAttempted[name] = nil
+            end
         end
     elseif event == "PARTY_INVITE_REQUEST" then
         local name = ...
