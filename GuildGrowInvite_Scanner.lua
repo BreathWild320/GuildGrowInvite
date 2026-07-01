@@ -156,7 +156,7 @@ scanFrame:SetScript("OnEvent", function(self, event, ...)
             local msgLower = msg:lower()
             for _, keyword in ipairs(lfgKeywords) do
                 if msgLower:find(keyword, 1, true) then
-                    GGI.InviteName(senderName, "LFG detection: " .. label)
+                    GGI.InviteName(senderName, "LFG detection: " .. label, nil, true)
                     break
                 end
             end
