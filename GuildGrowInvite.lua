@@ -269,6 +269,9 @@ function GGI.InviteName(name, source, unit, skipGuildCheck)
                 GGI.DebugLog("Skipped '%s', they're already in a guild.", name)
                 return false, "in another guild"
             end
+        else
+            SetCooldown(name, GGI.db.inviteCooldown or 30)
+            return false, "cannot verify guild status"
         end
     end
 
@@ -706,15 +709,9 @@ local function OnWhisper(msg, sender)
     end
 
     if not matched then return end
-    if GGI.IsInMyGuild(name) then return end
-
-    GGI.QueryGuildStatus(name, function(isGuilded)
-        if GGI.db and GGI.db.filterGuildedPlayers and isGuilded then
-            GGI.DebugLog("Skipped '%s', they're already in a guild.", name)
-            return
-        end
-        GGI.InviteName(name, "whisper keyword", nil, true)
-    end)
+    if db.filterGuildedPlayers and GGI.IsGuilded(name) then return end
+    GGI.QueueWhoCheck(name)
+    GGI.InviteName(name, "whisper keyword")
 end
 
 function GGI.OnChatMatch(name, channel)
@@ -723,10 +720,9 @@ function GGI.OnChatMatch(name, channel)
     if GGI.IsBlacklisted(name) then return end
     if not db.chatAutoInviteEnabled then return end
     if GGI.IsInMyGuild(name) then return end
-    -- Guild status for chat senders is already confirmed via GGI.QueryGuildStatus
-    -- before this is called (see GuildGrowInvite_Scanner.lua), so skip the
-    -- unreliable unit-token-only recheck here.
-    GGI.InviteName(name, "chat scan: " .. channel, nil, true)
+    if db.filterGuildedPlayers and GGI.IsGuilded(name) then GGI.QueueWhoCheck(name); return end
+    GGI.QueueWhoCheck(name)
+    GGI.InviteName(name, "chat scan: " .. channel)
 end
 
 ------------------------------------------------------------
@@ -942,6 +938,7 @@ eventFrame:RegisterEvent("PARTY_INVITE_REQUEST")
 eventFrame:RegisterEvent("DUEL_REQUESTED")
 eventFrame:RegisterEvent("DUEL_FINISHED")
 eventFrame:RegisterEvent("TRADE_SHOW")
+eventFrame:RegisterEvent("WHO_UPDATE")
 
 eventFrame:SetScript("OnEvent", function(self, event, ...)
     if event == "ADDON_LOADED" then
@@ -991,6 +988,8 @@ eventFrame:SetScript("OnEvent", function(self, event, ...)
         OnDuelFinished()
     elseif event == "TRADE_SHOW" then
         OnTradeShow()
+    elseif event == "WHO_UPDATE" then
+        GGI.OnWhoUpdate()
     end
 end)
 

@@ -87,3 +87,46 @@ end
 function GGI.ClearGuildedCache()
     GGI.guildedCache = {}
 end
+
+------------------------------------------------------------
+-- WHO-based guild check for remote players
+------------------------------------------------------------
+GGI.whoQueue = {}
+GGI.whoPending = nil
+
+function GGI.QueueWhoCheck(name)
+    if not name or name == "" then return end
+    local stripped = GGI.StripRealm(name)
+    if GGI.guildedCache[stripped] then return end
+    for _, entry in ipairs(GGI.whoQueue) do
+        if entry == stripped then return end
+    end
+    table.insert(GGI.whoQueue, stripped)
+end
+
+function GGI.ProcessWhoQueue()
+    if GGI.whoPending then return end
+    if #GGI.whoQueue == 0 then return end
+    GGI.whoPending = table.remove(GGI.whoQueue, 1)
+    pcall(SetWhoToUI, 0)
+    pcall(SendWho, "n-" .. GGI.whoPending)
+end
+
+function GGI.OnWhoUpdate()
+    if not GGI.whoPending then return end
+    local name = GGI.whoPending
+    GGI.whoPending = nil
+    local numResults = select(2, pcall(GetNumWhoResults))
+    if not numResults or numResults == 0 then GGI.ProcessWhoQueue(); return end
+    for i = 1, numResults do
+        local success, whoName, guild = pcall(GetWhoInfo, i)
+        if success and whoName and guild and guild ~= "" then
+            local stripped = GGI.StripRealm(whoName)
+            if stripped == name or stripped == GGI.StripRealm(name) then
+                GGI.guildedCache[name] = true
+                break
+            end
+        end
+    end
+    GGI.ProcessWhoQueue()
+end
