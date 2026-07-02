@@ -60,7 +60,7 @@ local function CreateCandidatesFrame()
     if candidatesFrame then return candidatesFrame end
 
     candidatesFrame = CreateFrame("Frame", "GuildGrowInviteCandidatesFrame", UIParent)
-    candidatesFrame:SetSize(640, 660)
+    candidatesFrame:SetSize(680, 740)
     candidatesFrame:SetPoint("CENTER")
     candidatesFrame:SetFrameStrata("DIALOG")
     candidatesFrame:SetMovable(true)
@@ -75,20 +75,20 @@ local function CreateCandidatesFrame()
         tile = true, tileSize = 32, edgeSize = 16,
         insets = { left = 5, right = 5, top = 5, bottom = 5 }
     })
-    candidatesFrame:SetBackdropColor(0.04, 0.04, 0.08, 0.96)
-    candidatesFrame:SetBackdropBorderColor(0.35, 0.35, 0.65, 0.85)
+    candidatesFrame:SetBackdropColor(0.03, 0.05, 0.1, 0.97)
+    candidatesFrame:SetBackdropBorderColor(0.3, 0.5, 0.95, 0.9)
 
     local titleBg = candidatesFrame:CreateTexture(nil, "ARTWORK")
     titleBg:SetTexture(statusbarFile)
-    titleBg:SetSize(600, 38)
+    titleBg:SetSize(640, 38)
     titleBg:SetPoint("TOP", candidatesFrame, "TOP", 0, -6)
-    titleBg:SetVertexColor(0.28, 0.28, 0.58, 0.9)
+    titleBg:SetVertexColor(0.15, 0.35, 0.75, 0.95)
 
     local title = candidatesFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    title:SetFont(fontFile, 14)
+    title:SetFont(fontFile, 16)
     title:SetPoint("TOP", titleBg, "TOP", 0, -10)
     title:SetText("Recruitment Candidates")
-    title:SetTextColor(0.85, 0.85, 1, 1)
+    title:SetTextColor(1, 1, 1, 1)
 
     candidatesFrame.closeBtn = CreateFrame("Button", nil, candidatesFrame, "UIPanelCloseButton")
     candidatesFrame.closeBtn:SetPoint("TOPRIGHT", candidatesFrame, "TOPRIGHT", -5, -5)

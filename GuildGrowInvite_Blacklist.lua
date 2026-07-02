@@ -53,7 +53,7 @@ local function CreateBlacklistFrame()
     if blacklistFrame then return blacklistFrame end
 
     blacklistFrame = CreateFrame("Frame", "GuildGrowInviteBlacklistFrame", UIParent)
-    blacklistFrame:SetSize(520, 560)
+    blacklistFrame:SetSize(580, 640)
     blacklistFrame:SetPoint("CENTER")
     blacklistFrame:SetFrameStrata("DIALOG")
     blacklistFrame:SetMovable(true)
@@ -68,31 +68,31 @@ local function CreateBlacklistFrame()
         tile = true, tileSize = 32, edgeSize = 16,
         insets = { left = 5, right = 5, top = 5, bottom = 5 }
     })
-    blacklistFrame:SetBackdropColor(0.04, 0.04, 0.08, 0.96)
-    blacklistFrame:SetBackdropBorderColor(0.35, 0.35, 0.65, 0.85)
+    blacklistFrame:SetBackdropColor(0.03, 0.05, 0.1, 0.97)
+    blacklistFrame:SetBackdropBorderColor(0.3, 0.5, 0.95, 0.9)
 
     local titleBg = blacklistFrame:CreateTexture(nil, "ARTWORK")
     titleBg:SetTexture(statusbarFile)
-    titleBg:SetSize(480, 38)
+    titleBg:SetSize(540, 38)
     titleBg:SetPoint("TOP", blacklistFrame, "TOP", 0, -6)
-    titleBg:SetVertexColor(0.28, 0.28, 0.58, 0.9)
+    titleBg:SetVertexColor(0.15, 0.35, 0.75, 0.95)
 
     local title = blacklistFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    title:SetFont(fontFile, 14)
+    title:SetFont(fontFile, 16)
     title:SetPoint("TOP", titleBg, "TOP", 0, -10)
     title:SetText("Blacklist Manager")
-    title:SetTextColor(0.85, 0.85, 1, 1)
+    title:SetTextColor(1, 1, 1, 1)
 
     blacklistFrame.closeBtn = CreateFrame("Button", nil, blacklistFrame, "UIPanelCloseButton")
     blacklistFrame.closeBtn:SetPoint("TOPRIGHT", blacklistFrame, "TOPRIGHT", -5, -5)
     blacklistFrame.closeBtn:SetScript("OnClick", function() blacklistFrame:Hide() end)
 
     blacklistFrame.content = CreateFrame("ScrollFrame", "GuildGrowInviteBlacklistScrollFrame", blacklistFrame, "FauxScrollFrameTemplate")
-    blacklistFrame.content:SetSize(450, 360)
-    blacklistFrame.content:SetPoint("TOPLEFT", blacklistFrame, "TOPLEFT", 20, -55)
+    blacklistFrame.content:SetSize(520, 410)
+    blacklistFrame.content:SetPoint("TOPLEFT", blacklistFrame, "TOPLEFT", 26, -62)
 
     blacklistFrame.scrollChild = CreateFrame("Frame")
-    blacklistFrame.scrollChild:SetSize(450, 360)
+    blacklistFrame.scrollChild:SetSize(520, 410)
     blacklistFrame.content:SetScrollChild(blacklistFrame.scrollChild)
 
     blacklistFrame.content:SetBackdrop({
@@ -101,8 +101,8 @@ local function CreateBlacklistFrame()
         tile = true, tileSize = 16, edgeSize = 12,
         insets = { left = 4, right = 4, top = 4, bottom = 4 }
     })
-    blacklistFrame.content:SetBackdropColor(0, 0, 0, 0.35)
-    blacklistFrame.content:SetBackdropBorderColor(0.2, 0.2, 0.4, 0.6)
+    blacklistFrame.content:SetBackdropColor(0.02, 0.03, 0.08, 0.5)
+    blacklistFrame.content:SetBackdropBorderColor(0.2, 0.35, 0.7, 0.6)
 
     local colH1 = blacklistFrame.scrollChild:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
     colH1:SetFont(fontFile, 10)
@@ -126,14 +126,14 @@ local function CreateBlacklistFrame()
 
     local addLabel = blacklistFrame:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
     addLabel:SetFont(fontFile, 11)
-    addLabel:SetPoint("TOPLEFT", blacklistFrame, "TOPLEFT", 22, -430)
+    addLabel:SetPoint("TOPLEFT", blacklistFrame, "TOPLEFT", 26, -490)
     addLabel:SetText("Add to permanent blacklist:")
-    addLabel:SetTextColor(0.65, 0.65, 0.8, 1)
+    addLabel:SetTextColor(0.75, 0.75, 0.85, 1)
 
     blacklistFrame.addBox = CreateFrame("EditBox", nil, blacklistFrame)
     blacklistFrame.addBox:SetAutoFocus(false)
-    blacklistFrame.addBox:SetSize(220, 22)
-    blacklistFrame.addBox:SetPoint("LEFT", addLabel, "RIGHT", 10, 0)
+    blacklistFrame.addBox:SetSize(280, 26)
+    blacklistFrame.addBox:SetPoint("LEFT", addLabel, "RIGHT", 12, 0)
     blacklistFrame.addBox:SetBackdrop({
         bgFile = bgFile,
         edgeFile = borderFile,
@@ -147,7 +147,7 @@ local function CreateBlacklistFrame()
     blacklistFrame.addBox:SetTextColor(1, 1, 1, 1)
 
     blacklistFrame.addBtn = CreateFrame("Button", nil, blacklistFrame, "UIPanelButtonTemplate")
-    blacklistFrame.addBtn:SetSize(80, 22)
+    blacklistFrame.addBtn:SetSize(90, 26)
     blacklistFrame.addBtn:SetPoint("LEFT", blacklistFrame.addBox, "RIGHT", 8, 0)
     blacklistFrame.addBtn:SetText("Add")
     SetBtnFont(blacklistFrame.addBtn, fontFile, 10)
